@@ -1,9 +1,13 @@
 {
   "name": "node-game-engine",
   "version": "0.0.1",
-  "description": "Multiplayer game test",
+  "description": "Multiplayer game engine",
   "dependencies": {
     "express": "^4.10.2",
-    "socket.io": "^1.4.6"
+    "three": "^0.77.1",
+    "bson": "^0.4.23",
+    "ws": "^1.1.0",
+    "filereader": "^0.10.3"
+
   }
 }
