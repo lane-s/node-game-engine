@@ -10,12 +10,13 @@ inputHandler.prototype.handleIt = function(ws, manager)
 {
 	function onmessagedeserialized(msg)
 	{
-		player = manager.getUserByConnection(ws).getPlayer();
-		inputState = player.getInputState();
+		var user = manager.getUserByConnection(ws);
+
+		var inputState = user.getInputState();
 
 		if(msg.id === 'key_down')
 		{
-			keyCode = msg.content;
+			var keyCode = msg.content;
 
 			if(keyCode == 37)
 			{
@@ -51,10 +52,10 @@ inputHandler.prototype.handleIt = function(ws, manager)
 			}
 		}
 		
-		player.setInputState(inputState);
+		user.setInputState(inputState);
 	}
 	ws.onmessage = function(e){
-            msg = BSON.deserialize(e.data);
+            var msg = BSON.deserialize(e.data);
             onmessagedeserialized(msg);
 	}
 

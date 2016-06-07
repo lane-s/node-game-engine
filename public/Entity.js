@@ -1,70 +1,140 @@
-if(typeof require !== 'undefined')
-{
-	var THREE = require('./three.min.js');
-}
+ //a removed component which contains a list of components to remove by name.
+ //Empty list means completely remove the entity
+ componentRemove = function(componentList, removeEntity)
+ {
+ 	this.componentList = componentList || [];
+ 	this.removeEntity = removeEntity || false;
+ }
+ componentRemove.prototype.name = 'removed';
+
+ //a created component which contains a list of components to create
+ componentCreate = function(componentList)
+ {
+ 	this.componentList = componentList || [];
+ }
+ componentCreate.prototype.name = 'created';
 
 Entity = function()
 {
-	this.position = new THREE.Vector3(0,0,0);
-	this.velocity = new THREE.Vector3(0,0,0);
-	this.id = -1;
-	//Initial conditions to send clients
-	this.changes = [{key: "position",value: this.position},
-					{key: "velocity",value: this.velocity}];
-	this.justCreated = true;
-}
-Entity.prototype.getID = function()
-{
-	return this.id;
-}
-Entity.prototype.setID = function(id)
-{
-	this.id = id;
-}
-Entity.prototype.getChanges = function()
-{
-	return this.changes;
-}
-Entity.prototype.addChange = function(change)
-{
-	this.changes.push(change);
-}
-Entity.prototype.clearChanges = function()
-{
-	this.changes = [];
-}
-Entity.prototype.setPosition = function(position){
-	this.position = position;
-}
-Entity.prototype.setVelocity = function(velocity)
-{
-	this.velocity = velocity;
-}
-Entity.prototype.getPosition = function()
-{
-	return this.position;
-}
-Entity.prototype.getVelocity = function()
-{
-	return this.velocity;
+ this.id = -1;
+ 
+ // The component data will live in this object
+ this.components = {};
+
+ //Automatically give new entities an empty created/removed component
+ createcomponent = new componentCreate();
+ removecomponent = new componentRemove();
+
+ this.components[createcomponent.name] = new componentCreate();
+ this.components[removecomponent.name] = new componentRemove([],false);
+ 
+ return this;
+
 }
 
-Entity.prototype.update = function()
-{
-	if(!this.justCreated)
-	{
-		this.clearChanges();
-	}else{
-		this.justCreated = false;
-	}
+ Entity.prototype.getID = function()
+ {
+ 	return this.id;
+ }
 
-	newposition = new THREE.Vector3();
-	oldposition = this.position;
-	newposition.addVectors(this.position,this.velocity);
-	this.setPosition(newposition);
-	if(newposition.distanceTo(oldposition) > 0)
-		this.addChange({key: "position",value: newposition});
-}
+ Entity.prototype.setID = function(id)
+ {
+ 	this.id = id;
+ }
+
+
+ //We remove an entity by clearing it's components then adding a removed component
+ Entity.prototype.remove = function(remove)
+ {
+ 	this.clearComponents();
+ 	this.components['removed'] = new componentRemove([],true);
+ 	this.components['created'] = new componentCreate();
+ }
+ 
+ Entity.prototype.addComponent = function addComponent ( component ){
+ // Add component data to the entity- functions the same as updating component
+ // NOTE: The component must have a name property (which is defined as 
+ // a prototype protoype of a component function)
+ this.components[component.name] = component;
+ this.components.created.componentList.push(component);
+ return this;
+ };
+
+ Entity.prototype.getComponent = function(componentName)
+ {
+ 	var name = componentName;
+ 	if(typeof componentName === 'function')
+ 	{
+ 		name = componentName.prototype.name;
+ 	}
+ 	return this.components[name];
+ }
+
+ //Returns a list of components (without the created component since it is only used server side and every server-side entity has it)
+ Entity.prototype.getComponentList = function()
+ {
+ 	var componentList = [];
+ 		//Iterate over every component in the entity and add to the data object
+		for (var component in this.components) {
+    		if (this.components.hasOwnProperty(component)) {
+    			if(component !== 'created') //The client has no use for this component
+    			{
+        		componentList.push(this.components[component]);
+        		}
+    		}
+		}
+	return componentList;
+ }
+ //Returns data in correct format for sending over sockets
+ Entity.prototype.getData = function()
+ {
+ 	var entityData = {};
+ 	entityData.id = this.id;
+ 	entityData.components = this.getComponentList();
+ 	return entityData;
+ }
+
+ Entity.prototype.removeComponent = function removeComponent ( componentName ){
+ // Remove component data by removing the reference to it.
+ // Allows either a component function or a string of a component name to be
+ // passed in
+ var name = componentName; // assume a string was passed in
+ 
+ if(typeof componentName === 'function'){ 
+ // get the name from the prototype of the passed component function
+ name = componentName.prototype.name;
+ }
+ 
+ // Remove component data by removing the reference to it
+ delete this.components[name];
+ this.components.removed.componentList.push(component);
+ return this;
+ };
+
+ //Clear all components but keep the removed component if present
+ Entity.prototype.clearComponents = function()
+ {
+ 	this.components = {};
+ }
+
+ //Add a group of components using an assemblage with a componentList
+ Entity.prototype.addAssemblage = function addAssemblage(assemblage)
+ {
+ 	if(typeof assemblage.componentList !== 'undefined')
+ 	{
+ 		for(i = 0; i < assemblage.componentList.length; i++)
+ 		{
+ 			this.addComponent(assemblage.componentList[i]);
+ 		}
+ 	}
+ 	return this;
+ }
+ 
+ Entity.prototype.print = function print () {
+ // Function to print / log information about the entity
+ console.log(JSON.stringify(this, null, 4));
+ return this;
+ };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
 	module.exports = Entity;

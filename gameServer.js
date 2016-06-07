@@ -1,56 +1,102 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
-var Player = require('./public/Player');
+var Entity = require('./public/Entity');
+var systemServerInput = require('./public/Systems/systemServerInput');
+var systemPhysics = require('./public/Systems/systemPhysics');
 
 gameServer = function(tickRate)
 {
 	this.tickRate = tickRate;
+	console.log("Game server running at a tickrate of "+tickRate+"ms");
+	this.changeList = [];
+	this.changeTable = {};
 }
 
-gameServer.prototype.handleEntityChanges = function(entityManager,wss)
+//integrates changes from a system into the main list/table
+gameServer.prototype.integrateChanges = function(integrateList)
 {
-	entities = entityManager.getEntities();
-
-
-	allChanges = [];
-	for(i = 0; i < entities.length; i++)
+	for(var i = 0; i < integrateList.length; i++)
 	{
-		entityChanges = entities[i].getChanges();
-		if(entityChanges.length > 0)
+		var entity = integrateList[i];
+		var index = this.changeTable[entity.id];
+		if(!index)
 		{
-			myType = 'Entity';
-			if(entities[i] instanceof Player)
+			var newEntity = {};
+			newEntity.id = entity.id;
+			newEntity.components = [];
+			this.changeList.push(newEntity);
+			index = this.changeList.length-1;
+			this.changeTable[entity.id] = index;
+		}
+		for(var j = 0; j < entity.components.length; j++)
+		{
+			var foundComponent = false;
+			for(var k = 0; k < this.changeList[index].components.length; k++)
 			{
-				myType = 'Player';
-			}
-
-			changeData = {key: entities[i].getID(), value: entityChanges, type: myType};
-			allChanges.push(changeData);
-			for(j = 0; j < entityChanges.length; j++)
-			{
-				if(entityChanges[j].key === 'removed')
+				if(this.changeList[index].components[k].name === entity.components[j].name)
 				{
-					entityManager.deleteFromList(entities[i].getID());
+					foundComponent = true;
+					this.changeList[index].components[k] = entity.components[j];
 				}
 			}
+			if(!foundComponent)
+				this.changeList[index].components.push(entity.components[j]);
 		}
 	}
-	if(allChanges.length > 0)
-	{
-	changeMsg = {id:'entityChanges',content: allChanges}
-	//console.log(changeMsg.id);
-	wss.broadcast(BSON.serialize(changeMsg));
-	}
 }
-
-gameServer.prototype.update = function(entityManager,wss)
+//The main loop which runs at a set interval to do game logic
+gameServer.prototype.update = function(userManager, entityManager,wss)
 {
-	tickRate = this.tickRate;
-	server = this;
+	var server = this;
 	setInterval(function(){
-		entityManager.updateAll();
-		server.handleEntityChanges(entityManager,wss);
-	},tickRate)
+	//Create list of entity changes to build during the update
+	//Systems return a list of changes made by the system
+	server.changeList = [];
+	server.changeTable = {};
+
+	//Loop through all entities and run systems that apply to individual entities
+	for(var i = 0; i < entityManager.getEntityList().length; i++)
+	{
+		var entity = entityManager.getEntity(entityManager.getEntityList()[i]);
+		//Handle creation of entities/components
+		if(entity.components.created.componentList.length > 0)
+		{
+			var componentList = entity.components.created.componentList;
+			server.integrateChanges([ {id: entity.getID(),components: componentList } ]);
+			entity.components.created.componentList = [];
+		}
+
+		//Handle removal of entities/components
+		if(entity.components.removed.removeEntity)
+		{
+			//If the removeEntity flag is true, we integrate the entity into the changes so the client knows to remove the entity
+			server.integrateChanges([entity.getData()]);
+			//We also completely delete the entity from the manager
+			entityManager.deleteFromList(i);
+			continue; //No need to run systems on this entity
+		}else if(entity.components.removed.componentList.length > 0)
+		{
+			//Otherwise we just want to remove certain components from an entity
+			server.integrateChanges([ {id: entity.getID(),components: [entity.components.removed] } ]);
+			entity.components.removed.componentList = [];
+		}
+
+		//Run systems for individual entities
+		server.integrateChanges(systemServerInput(entity,userManager));
+		server.integrateChanges(systemPhysics(entity));
+
+	}
+
+	//Send changes to client
+	if(server.changeList.length > 0)
+	{
+		//console.log(JSON.stringify(server.changeList));
+		var changeMsg = {id:'entityChanges',content: server.changeList}
+		//console.log(changeMsg.id);
+		wss.broadcast(BSON.serialize(changeMsg));
+	}
+
+	},this.tickRate);
 }
 
 module.exports = gameServer;

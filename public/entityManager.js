@@ -1,81 +1,55 @@
+//The entity manager uses an array to hold all of the entities currently in the game
+//It uses a table to access the entities quickly with the entity id
 entityManager = function()
 {
 	this.entityList = [];
+	this.entityTable = {};
+	this.lastID = -1;
+	this.freeIDs = [];
+
 }
 
-entityManager.prototype.updateAll = function()
-{
-	for(i = 0; i < this.entityList.length; i++)
-	{
-		changes = this.entityList[i].getChanges();
-		skipUpdate = false;
-		for(j = 0; j < changes.length; j++)
-		{
-			if(changes[j].key === 'removed')
-			{
-				skipUpdate = true;
-
-				break;
-			}
-		}
-		if(!skipUpdate)
-			this.entityList[i].update();
-	}
-}
-
-
+//Add entity with id that is unique to the session
 entityManager.prototype.addEntity = function(entity)
 {
-	foundID = true;
-	id = 0;
-	while(foundID)
+	var id = entity.getID();
+	if(id == -1)
 	{
-		id++;
-		foundID = false;
-		if(this.getEntity(id) != null)
+		if(this.freeIDs.length > 0)
 		{
-			foundID = true;
-		}	
+			id = this.freeIDs.shift();
+
+		}else{
+			id = this.lastID+1;
+			this.lastID = id;
+		}
 	}
+
 	entity.setID(id);
-	this.entityList.push(entity);
+	this.entityList.push(id);
+	this.entityTable[id] = entity;
 	return entity;
 }
 
 entityManager.prototype.getEntity = function(id)
 {
-	for(i = 0; i < this.entityList.length; i++)
-	{
-		if(this.entityList[i].getID() == id)
-		{
-			return this.entityList[i];
-		}
-	}
+	return this.entityTable[id];
 }
 
 entityManager.prototype.removeEntity = function(id)
 {
-	for(i = 0; i < this.entityList.length; i++)
-	{
-		if(this.entityList[i].getID() == id)
-		{
-			this.entityList[i].addChange({key: "removed",value: "true"});
-		}
-	}
+	this.entityTable[id].remove();
 }
 
-entityManager.prototype.deleteFromList = function(id)
+entityManager.prototype.deleteFromList = function(index)
 {
-	for(i = 0; i < this.entityList.length; i++)
-	{
-		if(this.entityList[i].getID() == id)
-		{
-			this.entityList.splice(i,1);
-		}
-	}
+	var id = this.entityList[index];
+	this.freeIDs.push(id);
+	delete this.entityTable[id]
+	this.entityList.splice(index,1);
 }
 
-entityManager.prototype.getEntities = function()
+entityManager.prototype.getEntityList = function()
 {
 	return this.entityList;
 }

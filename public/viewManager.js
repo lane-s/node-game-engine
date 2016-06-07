@@ -1,83 +1,83 @@
 viewManager = function()
 {
-	this.entityMeshes = [];
+	this.entityMeshes = {};
 }
 
 viewManager.prototype.addEntity = function(entity)
 {
-	added = false;
-	if(entity instanceof window.Player)
+	if(entity.components.unit)
 	{
-		geometry = new THREE.BoxGeometry( 200, 200, 200 );
-		material = new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: false } );
- 		mymesh = new THREE.Mesh( geometry, material );
- 		this.entityMeshes.push({id: entity.getID(), mesh: mymesh});
-		scene.add( mymesh );
-		added = true;
+		var unit = entity.components.unit;
+		//Create the mesh for a hero character
+		if(unit.type === 'hero')
+		{
+		console.log("Adding mesh for "+entity.getID());
+		var geometry = new THREE.BoxGeometry( 200, 200, 200 );
+		var material = new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: false } );
+ 		var mesh = new THREE.Mesh( geometry, material );
+ 		var position = entity.components.transform.position;
+ 		mesh.position.set(position.x,position.y,position.z);
+ 		this.entityMeshes[entity.getID()] = mesh;
+		scene.add( mesh );
+		return true;
+		}
 	}
-	return added;
+	this.entityMeshes[entity.getID()] = 'none';
+	return false;
 }
 
 viewManager.prototype.removeEntity = function(entity)
 {
-	removed = false;
-	for(i = 0; i < this.entityMeshes.length; i++)
+	if(this.entityMeshes[entity.getID()])
 	{
-		if(this.entityMeshes[i].id == entity.getID())
-		{
-			scene.remove(this.entityMeshes[i].mesh);
-			this.entityMeshes[i].splice(i,1);
-			removed = true;
-		}
+	console.log("Removing mesh");
+	scene.remove(this.entityMeshes[entity.getID()]);
+	delete this.entityMeshes[entity.getID()];
+	return true;
 	}
-	return removed;
+	return false;
 }
 
+//Update entities in the view, return true if removed
 viewManager.prototype.updateEntity = function(entity)
 {
-	updated = false;
-	for(i = 0; i < this.entityMeshes.length; i++)
-	{
-		if(this.entityMeshes[i].id == entity.getID())
+		if(this.entityMeshes[entity.getID()] != 'none' && typeof this.entityMeshes[entity.getID()] !== 'undefined')
 		{
-			this.entityMeshes[i].mesh.position.set(entity.getPosition().x,entity.getPosition().y,entity.getPosition().z);
-			updated = true;
+			//Handle position updates
+			if(entity.components.transform)
+			{
+			var transform = entity.components.transform;
+			this.entityMeshes[entity.getID()].position.set(transform.position.x,transform.position.y,transform.position.z);
+			}
+
+			//Handle entity removal
+			if(entity.components.removed)
+			{
+				var remove = entity.components.removed;
+				if(remove.removeEntity)
+				{
+				scene.remove(this.entityMeshes[entity.getID()]);
+				delete this.entityMeshes[entity.getID()];
+				return true;
+				}
+			}
+
+		}else{
+			this.addEntity(entity);
 		}
-	}
-	return updated;
+		return false;
 }
 
 viewManager.prototype.updateAll = function(entityManager)
 {
-	entities = entityManager.getEntities();
-	for(i = 0; i < entities.length; i++)
+	for(i = 0; i < entityManager.getEntityList().length; i++)
 	{
-		foundMesh = false;
-		for(j = 0; j < this.entityMeshes.length; j++)
+		var entity = entityManager.getEntity(entityManager.getEntityList()[i]);
+		if(this.updateEntity(entity))
 		{
-			if(this.entityMeshes[j].id == entities[i].getID())
-			{
-				foundMesh = true;
-				this.entityMeshes[i].mesh.position.set(entities[i].getPosition().x,entities[i].getPosition().y,entities[i].getPosition().z);
-				changes = entities[i].getChanges();
-				for(k = 0; k < changes.length; k++)
-				{
-					if(changes[k].key === 'removed')
-					{
-						entityManager.deleteFromList(this.entityMeshes[j].id);
-						scene.remove(this.entityMeshes[j].mesh);
-						this.entityMeshes.splice(j,1);
-					}
-				}
-			}
-		}
-		if(!foundMesh)
-		{
-			this.addEntity(entities[i]);
-			this.updateEntity(entities[i]);
+			entityManager.deleteFromList(i);
 		}
 	}
-
 
 }
 
