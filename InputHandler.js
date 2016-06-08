@@ -1,6 +1,6 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
-var FileReader = require('FileReader');
+var FileReader = require('filereader');
 function InputHandler()
 {
 
