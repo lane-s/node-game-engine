@@ -5,6 +5,7 @@ function User(id,ws)
 {
 		this.id = id;
 		this.ws = ws;
+		this.ws.id = id;
 		this.ownedEntities = [];
 		this.inputState = new inputState();
 }

@@ -26,6 +26,9 @@ The engine uses the [Entity-Component-System](docs/Entity-Component-System.md) d
 The layer above this design pattern consists of:
 
 [server.js](docs/server.md)- the main file for project 
+
 [UserManager](docs/UserManager.md)- handles users connecting and disconnecting
+
 [InputHandler](docs/InputHandler.md)- handles input being sent to the server from users
+
 [GameServer](docs/GameServer.md)- runs all the systems required on the server and sends the client the neccessary changes to the game state.
