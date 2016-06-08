@@ -1,17 +1,17 @@
 if(typeof require !== 'undefined')
 {
-var componentUnit = require('./componentUnit');
-var componentTransform = require('./componentTransform');
-var componentPhysics = require('./componentPhysics');
-var componentUserOwned = require('./componentUserOwned');
+var ComponentUnit = require('./ComponentUnit');
+var ComponentTransform = require('./ComponentTransform');
+var ComponentPhysics = require('./ComponentPhysics');
+var ComponentUserOwned = require('./ComponentUserOwned');
 }
 
-assemblageHero = function(id)
+AssemblageHero = function(id)
 {
 	this.id = id;
-	this.componentList = [new componentUnit('hero'), new componentTransform(),
-	  new componentPhysics(), new componentUserOwned(id,true)];
+	this.componentList = [new ComponentUnit('hero'), new ComponentTransform(),
+	  new ComponentPhysics(), new ComponentUserOwned(id,true)];
 }
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = assemblageHero;
+	module.exports = AssemblageHero;

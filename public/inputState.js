@@ -1,4 +1,5 @@
-inputState = function(){
+//This object contains possible input data from users as well as helper functions for relevant calculations
+InputState = function(){
 	this.left = 0;
 	this.right = 0;
 	this.up = 0;
@@ -7,34 +8,34 @@ inputState = function(){
 	this.horizontal = 0;
 }
 
-inputState.prototype.setLeft = function(l)
+InputState.prototype.setLeft = function(l)
 {
 	this.left = l;
 }
-inputState.prototype.setRight = function(r)
+InputState.prototype.setRight = function(r)
 {
 	this.right = r;
 }
-inputState.prototype.setUp = function(u)
+InputState.prototype.setUp = function(u)
 {
 	this.up = u;
 }
-inputState.prototype.setDown = function(d)
+InputState.prototype.setDown = function(d)
 {
 	this.down = d;
 }
 
-inputState.prototype.getVertical = function(v)
+InputState.prototype.getVertical = function(v)
 {
 	return this.up-this.down;
 }
 
-inputState.prototype.getHorizontal = function(h)
+InputState.prototype.getHorizontal = function(h)
 {
 	return this.right-this.left;
 }
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = inputState;
+	module.exports = InputState;
 else
-    window.inputState = inputState;
+    window.InputState = InputState;

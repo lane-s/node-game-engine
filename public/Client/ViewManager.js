@@ -1,9 +1,9 @@
-viewManager = function()
+ViewManager = function()
 {
 	this.entityMeshes = {};
 }
 
-viewManager.prototype.addEntity = function(entity)
+ViewManager.prototype.addEntity = function(entity)
 {
 	if(entity.components.unit)
 	{
@@ -26,7 +26,7 @@ viewManager.prototype.addEntity = function(entity)
 	return false;
 }
 
-viewManager.prototype.removeEntity = function(entity)
+ViewManager.prototype.removeEntity = function(entity)
 {
 	if(this.entityMeshes[entity.getID()])
 	{
@@ -39,7 +39,7 @@ viewManager.prototype.removeEntity = function(entity)
 }
 
 //Update entities in the view, return true if removed
-viewManager.prototype.updateEntity = function(entity)
+ViewManager.prototype.updateEntity = function(entity)
 {
 		if(this.entityMeshes[entity.getID()] != 'none' && typeof this.entityMeshes[entity.getID()] !== 'undefined')
 		{
@@ -68,7 +68,7 @@ viewManager.prototype.updateEntity = function(entity)
 		return false;
 }
 
-viewManager.prototype.updateAll = function(entityManager)
+ViewManager.prototype.updateAll = function(entityManager)
 {
 	for(i = 0; i < entityManager.getEntityList().length; i++)
 	{
@@ -81,4 +81,4 @@ viewManager.prototype.updateAll = function(entityManager)
 
 }
 
-window.viewManager = viewManager;
+window.ViewManager = ViewManager;

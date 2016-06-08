@@ -1,11 +1,11 @@
-componentUnit = function(type)
+ComponentUnit = function(type)
 {
 	this.type = type || "none"
 	//unit stats
 }
 
 
-componentUnit.prototype.name = "unit";
+ComponentUnit.prototype.name = "unit";
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = componentUnit;
+	module.exports = ComponentUnit;

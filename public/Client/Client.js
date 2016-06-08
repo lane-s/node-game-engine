@@ -15,7 +15,7 @@ function init() {
  	var host = location.origin.replace(/^http/, 'ws')
     var ws = new WebSocket(host);
 
-    _entityManager = new window.entityManager();
+    _EntityManager = new EntityManager();
  	
 	scene = new THREE.Scene();
  
@@ -26,7 +26,7 @@ function init() {
 	renderer = new THREE.WebGLRenderer();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	_viewManager = new window.viewManager();
+	_ViewManager = new ViewManager();
 
 	//Dynamically resize game window
 	 window.addEventListener( 'resize', onWindowResize, false );
@@ -85,9 +85,9 @@ function init() {
 				var entitychange = new Entity();
 				entitychange.setID(allChanges[i].id)
 				//If the changed entity does not exist on the client, create it
-				if(_entityManager.getEntity(entitychange.id) == null)
+				if(_EntityManager.getEntity(entitychange.id) == null)
 				{
-					_entityManager.addEntity(entitychange);
+					_EntityManager.addEntity(entitychange);
 				}
 					//update the entity with the changed components
 					var changedComponents = allChanges[i].components;
@@ -98,14 +98,14 @@ function init() {
 								//Remove components in the list
 								for(var k = 0; k < changedComponents[j].componentList.length; k++)
 								{
-									delete _entityManager.getEntity(entitychange.id).components[changedComponents[j].componentList[k].name];
+									delete _EntityManager.getEntity(entitychange.id).components[changedComponents[j].componentList[k].name];
 								}
 								changedComponents[j].componentList = [];
 						}
 						//If we want lag compensation for components then we need to avoid directly updating the component
 						//on the client side from this code
 
-						_entityManager.getEntity(entitychange.id).components[changedComponents[j].name] = changedComponents[j];
+						_EntityManager.getEntity(entitychange.id).components[changedComponents[j].name] = changedComponents[j];
 					}
 					
 			}
@@ -131,14 +131,14 @@ function init() {
 function animate() {
  
 	requestAnimationFrame( animate );
- 	_viewManager.updateAll(_entityManager);
+ 	_ViewManager.updateAll(_EntityManager);
 	renderer.render( scene, camera );
  
 }
 
 function simulate()
 {
-	for(var i = 0; i < _entityManager.getEntityList(); i++)
+	for(var i = 0; i < _EntityManager.getEntityList(); i++)
 	{
 		//Do client side input and physics simulation
 	}

@@ -12,27 +12,23 @@ app.get('/', function(req, res){
 });
 app.use('/public',express.static(__dirname + '/public'));
 
-http.listen(port, function(){
-  console.log('listening on ',http.address(),':',port);
-});
-
 var wss = new WebSocketServer({server: http});
 
-var userManager = require('./userManager');
-_userManager = new userManager();
+var UserManager = require('./UserManager');
+_UserManager = new UserManager();
 
-var inputHandler = require('./inputHandler');
-_inputHandler = new inputHandler();
+var InputHandler = require('./InputHandler');
+_InputHandler = new InputHandler();
 
-var entityManager = require('./public/entityManager');
-_entityManager = new entityManager();
+var EntityManager = require('./public/EntityManager');
+_EntityManager = new EntityManager();
 
 //Send data to every user
 wss.broadcast = function(data) {
-  users = _userManager.getUsers();
+  users = _UserManager.getUsers();
   for(i = 0; i < users.length; i++)
   {
-    ws = _userManager.getUserByID(users[i]).getConnection();
+    ws = _UserManager.getUserByID(users[i]).getConnection();
     if(ws.readyState < 2)
     {
     ws.send(data);
@@ -42,11 +38,20 @@ wss.broadcast = function(data) {
 
 //When a user connects, create the user and set up the proper callbacks for every event
 wss.on('connection', function(ws){
-  _userManager.initUser(ws, _entityManager); //Creates the user and handles disconnect callback
-  _inputHandler.handleIt(ws, _userManager); //Handles callback for input messages
+  _UserManager.initUser(ws, _EntityManager); //Creates the user and handles disconnect callback
+  _InputHandler.handleIt(ws, _UserManager); //Handles callback for input messages
 });
 
 //Create gameServer object to run game logic every tick
-var gameServer = require('./gameServer');
-gameServer = new gameServer(tickRate);
-gameServer.update(_userManager, _entityManager,wss);
+var _GameServer = require('./GameServer');
+_GameServer = new GameServer(tickRate);
+
+//Initialize server
+_GameServer.init(_EntityManager);
+
+//Begin listening for connections
+http.listen(port, function(){
+  console.log('listening on ',http.address(),':',port);
+});
+
+_GameServer.update(_UserManager, _EntityManager,wss);

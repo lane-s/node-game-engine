@@ -1,19 +1,19 @@
 if (typeof require !== 'undefined' )
 {
-	var THREE = require('../three.min.js');
+	var THREE = require('../lib/three.min.js');
 }
 var accel = 10;
 var brakeAccel = 10;
 var maxVelocity = 50;
 
-systemServerInput = function(entity, userManager)
+SystemServerInput = function(entity, userManager)
 {
 	var changes = [];
 
 	//Check if the entity is owned by a user
-	if(entity.components.userowned)
+	if(entity.components.userOwned)
 	{
-		var owned = entity.components.userowned;
+		var owned = entity.components.userOwned;
 		//Get the owner's input state
 		var owner = userManager.getUserByID(owned.ownerID);
 		var inputState = owner.getInputState();
@@ -87,4 +87,4 @@ systemServerInput = function(entity, userManager)
 	return changes;
 }
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = systemServerInput;
+	module.exports = SystemServerInput;

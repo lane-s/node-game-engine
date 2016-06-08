@@ -1,10 +1,10 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
 var Entity = require('./public/Entity');
-var systemServerInput = require('./public/Systems/systemServerInput');
-var systemPhysics = require('./public/Systems/systemPhysics');
-
-gameServer = function(tickRate)
+var SystemServerInput = require('./public/Systems/SystemServerInput');
+var SystemPhysics = require('./public/Systems/SystemPhysics');
+var THREE = require('./public/lib/three.min.js');
+GameServer = function(tickRate)
 {
 	this.tickRate = tickRate;
 	console.log("Game server running at a tickrate of "+tickRate+"ms");
@@ -13,7 +13,7 @@ gameServer = function(tickRate)
 }
 
 //integrates changes from a system into the main list/table
-gameServer.prototype.integrateChanges = function(integrateList)
+GameServer.prototype.integrateChanges = function(integrateList)
 {
 	for(var i = 0; i < integrateList.length; i++)
 	{
@@ -44,8 +44,14 @@ gameServer.prototype.integrateChanges = function(integrateList)
 		}
 	}
 }
+
+GameServer.prototype.init = function(entityManager)
+{
+
+
+}
 //The main loop which runs at a set interval to do game logic
-gameServer.prototype.update = function(userManager, entityManager,wss)
+GameServer.prototype.update = function(userManager, entityManager,wss)
 {
 	var server = this;
 	setInterval(function(){
@@ -82,8 +88,8 @@ gameServer.prototype.update = function(userManager, entityManager,wss)
 		}
 
 		//Run systems for individual entities
-		server.integrateChanges(systemServerInput(entity,userManager));
-		server.integrateChanges(systemPhysics(entity));
+		server.integrateChanges(SystemServerInput(entity,userManager));
+		server.integrateChanges(SystemPhysics(entity));
 
 	}
 
@@ -99,4 +105,4 @@ gameServer.prototype.update = function(userManager, entityManager,wss)
 	},this.tickRate);
 }
 
-module.exports = gameServer;
+module.exports = GameServer;

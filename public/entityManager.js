@@ -1,16 +1,17 @@
-//The entity manager uses an array to hold all of the entities currently in the game
+//The entity manager uses an array to hold all of the entity ids currently in the game
 //It uses a table to access the entities quickly with the entity id
-entityManager = function()
+EntityManager = function()
 {
 	this.entityList = [];
 	this.entityTable = {};
 	this.lastID = -1;
 	this.freeIDs = [];
+	this.terrainCanvas = null;
 
 }
 
 //Add entity with id that is unique to the session
-entityManager.prototype.addEntity = function(entity)
+EntityManager.prototype.addEntity = function(entity)
 {
 	var id = entity.getID();
 	if(id == -1)
@@ -31,17 +32,17 @@ entityManager.prototype.addEntity = function(entity)
 	return entity;
 }
 
-entityManager.prototype.getEntity = function(id)
+EntityManager.prototype.getEntity = function(id)
 {
 	return this.entityTable[id];
 }
 
-entityManager.prototype.removeEntity = function(id)
+EntityManager.prototype.removeEntity = function(id)
 {
 	this.entityTable[id].remove();
 }
 
-entityManager.prototype.deleteFromList = function(index)
+EntityManager.prototype.deleteFromList = function(index)
 {
 	var id = this.entityList[index];
 	this.freeIDs.push(id);
@@ -49,12 +50,12 @@ entityManager.prototype.deleteFromList = function(index)
 	this.entityList.splice(index,1);
 }
 
-entityManager.prototype.getEntityList = function()
+EntityManager.prototype.getEntityList = function()
 {
 	return this.entityList;
 }
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = entityManager;
+	module.exports = EntityManager;
 else
-    window.entityManager = entityManager;
+    window.EntityManager = EntityManager;

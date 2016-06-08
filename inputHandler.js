@@ -1,19 +1,18 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
 var FileReader = require('FileReader');
-function inputHandler()
+function InputHandler()
 {
 
 }
 
-inputHandler.prototype.handleIt = function(ws, manager)
+InputHandler.prototype.handleIt = function(ws, manager)
 {
 	function onmessagedeserialized(msg)
 	{
 		var user = manager.getUserByConnection(ws);
 
 		var inputState = user.getInputState();
-
 		if(msg.id === 'key_down')
 		{
 			var keyCode = msg.content;
@@ -51,7 +50,6 @@ inputHandler.prototype.handleIt = function(ws, manager)
 				inputState.setDown(0);
 			}
 		}
-		
 		user.setInputState(inputState);
 	}
 	ws.onmessage = function(e){
@@ -61,4 +59,4 @@ inputHandler.prototype.handleIt = function(ws, manager)
 
 }
 
-module.exports = inputHandler;
+module.exports = InputHandler;

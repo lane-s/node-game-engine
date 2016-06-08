@@ -1,9 +1,9 @@
 if (typeof require !== 'undefined' )
 {
-	var THREE = require('../three.min.js');
+	var THREE = require('../lib/three.min.js');
 }
 
-systemPhysics = function(entity)
+SystemPhysics = function(entity)
 {
 	var changes = [];
 
@@ -25,4 +25,4 @@ systemPhysics = function(entity)
 }
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = systemPhysics;
+	module.exports = SystemPhysics;

@@ -1,11 +1,11 @@
-componentUserOwned = function(id, removeOnDisconnect)
+ComponentUserOwned = function(id, removeOnDisconnect)
 {
 	this.ownerID = id;
 	this.removeOnDisconnect = removeOnDisconnect || false;
 	this.controlEnabled = true;
 }
 
-componentUserOwned.prototype.name = 'userowned';
+ComponentUserOwned.prototype.name = 'userOwned';
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-	module.exports = componentUserOwned;
+	module.exports = ComponentUserOwned;

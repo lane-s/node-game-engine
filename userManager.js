@@ -1,11 +1,11 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
 var User = require('./User');
-var inputHandler = require('./inputHandler');
-var assemblageHero = require('./public/Components/assemblageHero');
-var THREE = require('./public/three.min.js');
+var InputHandler = require('./InputHandler');
+var AssemblageHero = require('./public/Components/AssemblageHero');
+var THREE = require('./public/lib/three.min.js');
 
-function userManager()
+function UserManager()
 {
 	this.userList = [];
 	this.userTable = {};
@@ -13,7 +13,7 @@ function userManager()
 	this.lastID = -1;
 }
 
-userManager.prototype.initUser = function(socket, entityManager)
+UserManager.prototype.initUser = function(socket, entityManager)
 {
 	var id;
 	//Find unique id for new user
@@ -47,7 +47,7 @@ userManager.prototype.initUser = function(socket, entityManager)
 
 	//Create player hero
 	var hero = new Entity();
-	hero.addAssemblage(new assemblageHero(newUser.getID()));
+	hero.addAssemblage(new AssemblageHero(newUser.getID()));
 	entityManager.addEntity(hero);
 	newUser.addOwnedEntity(hero.getID());
 	//Add user to list
@@ -60,17 +60,17 @@ userManager.prototype.initUser = function(socket, entityManager)
 
 	//When a user disconnects, remove them from the list and manage entities owned by the user
 	socket.on('close', function disconnection(){
-		var user = manager.getUserByConnection(socket);
-		console.log('user '+user.getID()+' disconnected');
-		var ownedEntities = user.getOwnedEntities();
+		var connectedUser = manager.getUserByConnection(socket);
+		console.log('user '+connectedUser.getID()+' disconnected');
+		var ownedEntities = connectedUser.getOwnedEntities();
 		 for(var i = 0; i < ownedEntities.length; i++)
 		 {
-		 	var owned = entityManager.getEntity(ownedEntities[i]).components.userowned;
+		 	var owned = entityManager.getEntity(ownedEntities[i]).components.userOwned;
 		 	owned.ownerID = -1;
 		 	if(owned.removeOnDisconnect)
 		 	{
 		 		entityManager.removeEntity(ownedEntities[i]);
-		 		user.getOwnedEntities().splice(i,1);
+		 		connectedUser.getOwnedEntities().splice(i,1);
 		 	}
 		 }
 		 manager.removeUser(socket);
@@ -78,12 +78,12 @@ userManager.prototype.initUser = function(socket, entityManager)
 
 }
 
-userManager.prototype.getUsers = function()
+UserManager.prototype.getUsers = function()
 {
 	return this.userList;
 }
 
-userManager.prototype.removeUser = function(ws)
+UserManager.prototype.removeUser = function(ws)
 {
 	for(i=0; i< this.userList.length; i++)
 	{
@@ -96,15 +96,15 @@ userManager.prototype.removeUser = function(ws)
 	}	
 }
 
-userManager.prototype.getUserByConnection = function(ws)
+UserManager.prototype.getUserByConnection = function(ws)
 {
 	return this.userTable[ws.id];
 }
 
-userManager.prototype.getUserByID = function(id)
+UserManager.prototype.getUserByID = function(id)
 {
 	return this.userTable[id];
 }
 
-module.exports = userManager;
+module.exports = UserManager;
 

@@ -1,18 +1,21 @@
  //a removed component which contains a list of components to remove by name.
  //Empty list means completely remove the entity
- componentRemove = function(componentList, removeEntity)
+ ComponentRemoved = function(componentList, removeEntity)
  {
  	this.componentList = componentList || [];
  	this.removeEntity = removeEntity || false;
  }
- componentRemove.prototype.name = 'removed';
+ ComponentRemoved.prototype.name = 'removed';
 
  //a created component which contains a list of components to create
- componentCreate = function(componentList)
+ ComponentCreated = function(componentList)
  {
  	this.componentList = componentList || [];
  }
- componentCreate.prototype.name = 'created';
+ ComponentCreated.prototype.name = 'created';
+
+ //These components are neccessary so that the server can tell 
+ //the client to create and remove components before actually removing the components
 
 Entity = function()
 {
@@ -22,11 +25,11 @@ Entity = function()
  this.components = {};
 
  //Automatically give new entities an empty created/removed component
- createcomponent = new componentCreate();
- removecomponent = new componentRemove();
+ createComponent = new ComponentCreated();
+ removeComponent = new ComponentRemoved();
 
- this.components[createcomponent.name] = new componentCreate();
- this.components[removecomponent.name] = new componentRemove([],false);
+ this.components[createComponent.name] = new ComponentCreated();
+ this.components[removeComponent.name] = new ComponentRemoved([],false);
  
  return this;
 
@@ -47,8 +50,8 @@ Entity = function()
  Entity.prototype.remove = function(remove)
  {
  	this.clearComponents();
- 	this.components['removed'] = new componentRemove([],true);
- 	this.components['created'] = new componentCreate();
+ 	this.components['removed'] = new ComponentRemoved([],true);
+ 	this.components['created'] = new ComponentCreated();
  }
  
  Entity.prototype.addComponent = function addComponent ( component ){
