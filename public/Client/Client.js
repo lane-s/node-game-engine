@@ -26,7 +26,7 @@ function init() {
 	renderer = new THREE.WebGLRenderer();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	_ViewManager = new ViewManager();
+	systemRender = new SystemRender();
 
 	//Dynamically resize game window
 	 window.addEventListener( 'resize', onWindowResize, false );
@@ -131,7 +131,7 @@ function init() {
 function animate() {
  
 	requestAnimationFrame( animate );
- 	_ViewManager.updateAll(_EntityManager);
+ 	systemRender.update(_EntityManager);
 	renderer.render( scene, camera );
  
 }

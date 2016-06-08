@@ -6,7 +6,11 @@ var accel = 10;
 var brakeAccel = 10;
 var maxVelocity = 50;
 
-SystemServerInput = function(entity, userManager)
+SystemServerInput = function()
+{
+}
+
+SystemServerInput.prototype.update = function(entity, userManager)
 {
 	var changes = [];
 

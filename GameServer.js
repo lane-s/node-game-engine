@@ -60,6 +60,10 @@ GameServer.prototype.update = function(userManager, entityManager,wss)
 	server.changeList = [];
 	server.changeTable = {};
 
+	//Initialize systems
+	systemPhysics = new SystemPhysics();
+	systemServerInput = new SystemServerInput();
+
 	//Loop through all entities and run systems that apply to individual entities
 	for(var i = 0; i < entityManager.getEntityList().length; i++)
 	{
@@ -88,8 +92,8 @@ GameServer.prototype.update = function(userManager, entityManager,wss)
 		}
 
 		//Run systems for individual entities
-		server.integrateChanges(SystemServerInput(entity,userManager));
-		server.integrateChanges(SystemPhysics(entity));
+		server.integrateChanges(systemServerInput.update(entity,userManager));
+		server.integrateChanges(systemPhysics.update(entity));
 
 	}
 

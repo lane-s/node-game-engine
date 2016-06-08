@@ -3,7 +3,11 @@ if (typeof require !== 'undefined' )
 	var THREE = require('../lib/three.min.js');
 }
 
-SystemPhysics = function(entity)
+SystemPhysics = function()
+{
+}
+
+SystemPhysics.prototype.update = function(entity)
 {
 	var changes = [];
 
