@@ -1,6 +1,6 @@
 var bson = require("bson");
 var BSON = new bson.BSONPure.BSON();
-var FileReader = require('FileReader');
+var FileReader = require('filereader');
 function inputHandler()
 {
 
@@ -35,7 +35,7 @@ inputHandler.prototype.handleIt = function(ws, manager)
 		}else if(msg.id === 'key_up')
 		{
 			keyCode = msg.content;
-			
+
 			if(keyCode == 37)
 			{
 				inputState.setLeft(0);
@@ -51,7 +51,7 @@ inputHandler.prototype.handleIt = function(ws, manager)
 				inputState.setDown(0);
 			}
 		}
-		
+
 		user.setInputState(inputState);
 	}
 	ws.onmessage = function(e){
