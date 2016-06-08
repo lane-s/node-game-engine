@@ -21,11 +21,11 @@ Game design documentation can be viewed [here]()
 
 Code documentation in *italics* has not been implemented yet.
 
-The engine uses the [Entity-Component-System](Entity-Component-System.md) design pattern to handle most of the game's functionality.
+The engine uses the [Entity-Component-System](docs/Entity-Component-System.md) design pattern to handle most of the game's functionality.
 
 The layer above this design pattern consists of:
 
-[server.js](server.md)- the main file for project 
-[UserManager](UserManager.md)- handles users connecting and disconnecting
-[InputHandler](InputHandler.md)- handles input being sent to the server from users
-[GameServer](GameServer.md)- runs all the systems required on the server and sends the client the neccessary changes to the game state.
+[server.js](docs/server.md)- the main file for project 
+[UserManager](docs/UserManager.md)- handles users connecting and disconnecting
+[InputHandler](docs/InputHandler.md)- handles input being sent to the server from users
+[GameServer](docs/GameServer.md)- runs all the systems required on the server and sends the client the neccessary changes to the game state.
