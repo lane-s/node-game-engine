@@ -1,9 +1,11 @@
+THREE = require('three');
+
 SystemRender = function()
 {
 	this.entityMeshes = {};
 }
 
-SystemRender.prototype.addEntity = function(entity)
+SystemRender.prototype.addEntity = function(entity,scene)
 {
 	if(entity.components.unit)
 	{
@@ -26,7 +28,7 @@ SystemRender.prototype.addEntity = function(entity)
 	return false;
 }
 
-SystemRender.prototype.removeEntity = function(entity)
+SystemRender.prototype.removeEntity = function(entity,scene)
 {
 	if(this.entityMeshes[entity.getID()])
 	{
@@ -39,8 +41,9 @@ SystemRender.prototype.removeEntity = function(entity)
 }
 
 //Update entities in the view, return true if removed
-SystemRender.prototype.updateEntity = function(entity)
+SystemRender.prototype.updateEntity = function(entity,scene)
 {
+		//
 		if(this.entityMeshes[entity.getID()] != 'none' && typeof this.entityMeshes[entity.getID()] !== 'undefined')
 		{
 			//Handle position updates
@@ -56,24 +59,23 @@ SystemRender.prototype.updateEntity = function(entity)
 				var remove = entity.components.removed;
 				if(remove.removeEntity)
 				{
-				scene.remove(this.entityMeshes[entity.getID()]);
-				delete this.entityMeshes[entity.getID()];
-				return true;
+					this.removeEntity(entity,scene);
+					return true;
 				}
 			}
 
-		}else{
-			this.addEntity(entity);
+		}else if(this.entityMeshes[entity.getID()] != 'none'){
+			this.addEntity(entity,scene);
 		}
 		return false;
 }
 
-SystemRender.prototype.update = function(entityManager)
+SystemRender.prototype.update = function(entityManager,scene)
 {
 	for(i = 0; i < entityManager.getEntityList().length; i++)
 	{
 		var entity = entityManager.getEntity(entityManager.getEntityList()[i]);
-		if(this.updateEntity(entity))
+		if(this.updateEntity(entity,scene))
 		{
 			entityManager.deleteFromList(i);
 		}
@@ -81,4 +83,4 @@ SystemRender.prototype.update = function(entityManager)
 
 }
 
-window.ViewManager = ViewManager;
+module.exports = SystemRender;

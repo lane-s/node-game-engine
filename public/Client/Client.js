@@ -1,6 +1,12 @@
 var scene, camera, renderer;
 var geometry, material, mesh;
- 
+
+var THREE = require('three');
+var Entity = require('../Entity');
+var EntityManager = require('../EntityManager');
+var SystemRender = require('../Systems/Client/SystemRender');
+
+
 init();
 simulate();
 animate();
@@ -131,7 +137,7 @@ function init() {
 function animate() {
  
 	requestAnimationFrame( animate );
- 	systemRender.update(_EntityManager);
+ 	systemRender.update(_EntityManager,scene);
 	renderer.render( scene, camera );
  
 }

@@ -10,6 +10,16 @@ Get the node console running in the node-game-engine directory
 
 Run `npm install`
 
+Make sure browserify and uglify-js are installed
+
+`npm install -g browserify`
+
+`npm install -g uglify-js`
+
+Build the client-side javascript
+
+`npm run build`
+
 Run the server with `npm start` or `node server.js`
 
 Connect to the server by opening localhost:8080 in your browser
