@@ -1,5 +1,7 @@
 #Entity-Component-System
 
+See [wikipedia](https://en.wikipedia.org/wiki/Entity_component_system) for a good overview on this design pattern
+
 The [Entity](public/Entity.md) is the most basic object in the game. Everything besides terrain is an entity. 
 Entities are managed both client and server-side using the [EntityManager](public/EntityManager.md)
 
