@@ -82,7 +82,7 @@ TODO: Let the user close the Voronoi cells, do not do it automatically. Not only
 
 // ---------------------------------------------------------------------------
 
-function Voronoi() {
+Voronoi = function() {
     this.vertices = null;
     this.edges = null;
     this.cells = null;
@@ -1702,4 +1702,4 @@ Voronoi.prototype.compute = function(sites, bbox) {
     return diagram;
     };
 
-    
+    module.exports = Voronoi;
