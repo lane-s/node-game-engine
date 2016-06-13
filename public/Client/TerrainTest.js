@@ -10,9 +10,9 @@ function init()
 	scene = new THREE.Scene();
  
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-	camera.position.z = 155;
-	camera.position.x = 75;
-	camera.position.y = 75;
+	camera.position.z = 150;
+	camera.position.x = 50;
+	camera.position.y = 50;
  
  
 	renderer = new THREE.WebGLRenderer();
@@ -59,7 +59,6 @@ function init()
 	{
 		var x = terrain.sites[i].x;
 		var y = terrain.sites[i].y;
-		console.log(x+","+y);
 		geometry.vertices.push(new THREE.Vector3(x,y,0));
 	}
 
@@ -77,17 +76,14 @@ function init()
    		 });
     	for(var j = 0; j < terrain.diagram.cells[i].halfedges.length; j++)
     	{
+
+    		endpoint = terrain.diagram.cells[i].halfedges[j].getEndpoint();
+    		v = new THREE.Vector3(endpoint.x,endpoint.y,0);
+    		geometry.vertices.push(v);
     		if( j == 0)
     		{
-    			va = terrain.diagram.cells[i].halfedges[j].getStartpoint();
-    			v1 = new THREE.Vector3(va.x,va.y,0);
-    			geometry.vertices.push(v1);
-    			vStart = v1;
+    			vStart = v;
     		}
-
-    		vb = terrain.diagram.cells[i].halfedges[j].getEndpoint();
-    		v2 = new THREE.Vector3(vb.x,vb.y,0);
-    		geometry.vertices.push(v2);
     	}
     	geometry.vertices.push(vStart);
     	var line = new THREE.Line(geometry,material);
