@@ -12,6 +12,6 @@ Current components are:
 
 [Unit](ComponentUnit.md)
 
-[UserOwned](ComponentUserOwned).md
+[UserOwned](ComponentUserOwned.md)
 
 *Renderable*
