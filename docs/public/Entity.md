@@ -1,6 +1,6 @@
 #Entity
 
-An Entity consists of an id and a list of [Components](Componets/Components.md). 
+An Entity consists of an id and a list of [Components](Components/Components.md). 
 
 Every entity also has two special components called 'created' and 'removed'. These are used by [GameServer](../GameServer.md) and [Client](Client/Client.md).
 
