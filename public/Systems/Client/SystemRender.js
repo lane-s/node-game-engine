@@ -15,7 +15,7 @@ SystemRender.prototype.addEntity = function(entity,scene)
 		{
 		console.log("Adding mesh for "+entity.getID());
 		var geometry = new THREE.BoxGeometry( 200, 200, 200 );
-		var material = new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: false } );
+		var material = new THREE.MeshBasicMaterial( { color: 0xFFFFFF+unit.color, wireframe: false } );
  		var mesh = new THREE.Mesh( geometry, material );
  		var position = entity.components.transform.position;
  		mesh.position.set(position.x,position.y,position.z);

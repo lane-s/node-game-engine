@@ -11,6 +11,7 @@
     "ws": "^1.1.0"
   },
   "scripts":{
-    "build": "browserify public/Client/Client.js | uglifyjs -mc > public/clientBundle.js"
+    "build": "browserify public/Client/Client.js | uglifyjs -mc > public/clientBundle.js",
+    "terraintest": "browserify public/Client/TerrainTest.js | uglifyjs -mc > public/clientBundle.js"
   }
 }
