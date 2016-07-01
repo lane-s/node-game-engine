@@ -8,9 +8,10 @@
     "filereader": "^0.10.3",
     "seedrandom": "^2.4.2",
     "three": "^0.77.1",
+    "three-orbit-controls": "^72.0.0",
     "ws": "^1.1.0"
   },
-  "scripts":{
+  "scripts": {
     "build": "browserify public/Client/Client.js | uglifyjs -mc > public/clientBundle.js",
     "terraintest": "browserify public/Client/TerrainTest.js | uglifyjs -mc > public/clientBundle.js"
   }

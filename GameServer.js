@@ -13,6 +13,7 @@ GameServer = function(tickRate)
 }
 
 //integrates changes from a system into the main list/table
+//Data is sent with components in a list rather than properties of a components object
 GameServer.prototype.integrateChanges = function(integrateList)
 {
 	for(var i = 0; i < integrateList.length; i++)
