@@ -88,7 +88,7 @@ function init()
 	{
 		var x = terrain.sites[i].x;
 		var y = terrain.sites[i].y;
-		geometry.vertices.push(new THREE.Vector3(x,y,1));
+		geometry.vertices.push(new THREE.Vector3(x,y,150));
 	}
 
 	var points = new THREE.Points(geometry,material);
@@ -97,18 +97,27 @@ function init()
 	//Render lines for polygon edges
     var va,vb,v1,v2,vStart;
 
-    geometry = new THREE.Geometry();
-    material = new THREE.LineBasicMaterial({
-        	color: 0x0000ff
-   		 });
+    var colorTable = {
+    	ice: 0x0000ff,
+    	volcanic: 0xff3300,
+    	forest: 0x006600,
+    	plains: 0xcc9900,
+    	desert: 0xffcc66
+
+    }
 
     for(var i = 0; i < terrain.diagram.cells.length; i++)
     {
     	geometry = new THREE.Geometry();
+    	material = new THREE.LineBasicMaterial({
+        	color: colorTable[terrain.diagram.cells[i].biomeType.name],
+        	linewidth: 3
+   		 });
+
     	for(var j = 0; j < terrain.diagram.cells[i].halfedges.length; j++)
     	{
-    		endpoint = terrain.diagram.cells[i].halfedges[j].getEndpoint();
-    		v = new THREE.Vector3(endpoint.x,endpoint.y,1);
+    		var endpoint = terrain.diagram.cells[i].halfedges[j].getEndpoint();
+    		v = new THREE.Vector3(endpoint.x,endpoint.y,150);
     		geometry.vertices.push(v);
     		if( j == 0)
     		{
