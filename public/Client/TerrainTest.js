@@ -2,6 +2,7 @@ var scene, camera, renderer, controls;
 var THREE = require('three');
 var TerrainGenerator = require('../TerrainGen/TerrainGenerator');
 var OrbitControls = require('three-orbit-controls')(THREE);
+var Color = require('color-js');
 
 init();
 animate();
@@ -12,8 +13,8 @@ function init()
  
 	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
 
-	const size = 2000;
-	const segs = 200;
+	const size = 6000;
+	const segs = 600;
 
 	camera.position.set(size/2,size/2,200);
 
@@ -47,34 +48,103 @@ function init()
 	//Add renderer to dom
 	document.body.appendChild( renderer.domElement );
 
+	//Reference box
+	var boxgeometry = new THREE.BoxGeometry( 10, 10, 10 );
+	var boxmaterial = new THREE.MeshStandardMaterial( { color: 0x0000ff, wireframe: false } );
+ 	var boxmesh = new THREE.Mesh( boxgeometry, boxmaterial);
+ 	scene.add(boxmesh);
+ 	boxmesh.position.set(size/2,size/2,50);
+ 	boxmesh.castShadow = true;
+
+
+				// LIGHTS
+
+				hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+				hemiLight.color.setHSL( 0.6, 1, 0.6 );
+				hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+				hemiLight.position.set( size/2, size/2, 0 );
+				scene.add( hemiLight );
+
+				//
+
+				dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+				dirLight.color.setHSL( 0.1, 1, 0.95 );
+				dirLight.position.set( 0, 0, 1 );
+				dirLight.position.multiplyScalar( 50 );
+				scene.add( dirLight );
+
+				dirLight.castShadow = true;
+
+				dirLight.shadowMapWidth = 2048;
+				dirLight.shadowMapHeight = 2048;
+
+				var d = 50;
+
+				dirLight.shadowCameraLeft = -d;
+				dirLight.shadowCameraRight = d;
+				dirLight.shadowCameraTop = d;
+				dirLight.shadowCameraBottom = -d;
+				dirLight.shadowCameraVisible = true;
+
+				dirLight.shadowCameraFar = 3500;
+				dirLight.shadowBias = -0.0001;
+
 
 	//Create terrain generator
 	var terrain = new TerrainGenerator({
 		sizeX: size,
 		sizeY: size,
-		seed: 2,
+		seed: 20,
 		baseMapParams: {
 			segments: segs
 		}
 	});
+
+	var colorTable = {
+    	ice: 0x0000ff,
+    	volcanic: 0xff3300,
+    	forest: 0x006600,
+    	plains: 0xcc9900,
+    	desert: 0xffcc66
+
+    }
 
 	//Fully generate terrain
 	terrain.generateTerrain();
 
 	var geometry = new THREE.PlaneGeometry(size, size, segs-1, segs-1);
 
-	var material = new THREE.MeshBasicMaterial({
-    	color: 0xffffff,
-    	wireframe: true
+	var material = new THREE.MeshStandardMaterial({
+    	vertexColors: THREE.VertexColors,
+    	metalness: 0.05,
+    	roughness: 0.6,
+    	wireframe: false
 	});
+
+	for(var i = 0; i < geometry.faces.length; i++)
+	{
+		var aColor = new THREE.Color(terrain.baseMap[geometry.faces[i].a].color.toString());
+		var bColor = new THREE.Color(terrain.baseMap[geometry.faces[i].b].color.toString());
+		var cColor = new THREE.Color(terrain.baseMap[geometry.faces[i].c].color.toString());
+
+		var vertexColors = [
+		aColor,bColor,cColor
+		]
+
+		geometry.faces[i].vertexColors = vertexColors;
+	}
 
 	//Render plane for base heightmap
 	for(var i = 0; i < terrain.baseMap.length; i++)
 	{
-		geometry.vertices[i].z = terrain.baseMap[i];
+		geometry.vertices[i].z = terrain.baseMap[i].height;
 	}
+	geometry.computeVertexNormals();
+
 	var terrainMesh = new THREE.Mesh(geometry,material);
 	scene.add(terrainMesh);
+	terrainMesh.recieveShadow = true;
+	terrainMesh.castShadow = true;
 	terrainMesh.position.set(size/2,size/2,0);
 
 	geometry = new THREE.Geometry();
@@ -83,6 +153,7 @@ function init()
 		color: 0x0000ff,
 	});
 
+	/*
 	//Render points for random sites
 	for(var i = 0; i < terrain.siteNum; i++)
 	{
@@ -92,20 +163,12 @@ function init()
 	}
 
 	var points = new THREE.Points(geometry,material);
-	scene.add(points);
+	scene.add(points);*/
 
 	//Render lines for polygon edges
     var va,vb,v1,v2,vStart;
 
-    var colorTable = {
-    	ice: 0x0000ff,
-    	volcanic: 0xff3300,
-    	forest: 0x006600,
-    	plains: 0xcc9900,
-    	desert: 0xffcc66
-
-    }
-
+    /*
     for(var i = 0; i < terrain.diagram.cells.length; i++)
     {
     	geometry = new THREE.Geometry();
@@ -127,7 +190,7 @@ function init()
     	geometry.vertices.push(vStart);
     	var line = new THREE.Line(geometry,material);
     	scene.add(line);
-    }
+    }*/
 
 }
 

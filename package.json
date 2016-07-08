@@ -4,6 +4,7 @@
   "description": "Multiplayer game engine",
   "dependencies": {
     "bson": "^0.4.23",
+    "color-js": "^1.0.3",
     "express": "^4.10.2",
     "filereader": "^0.10.3",
     "seedrandom": "^2.4.2",
