@@ -3,23 +3,10 @@
 const DEFAULT_MAP_SIZE = 150;
 const DEFAULT_SITE_NUM = 25;
 const DEFAULT_RELAX_ITERATIONS = 2;
-//Base Heightmap
-const DEFAULT_BASE_FREQUENCY = 1.5;
-const DEFAULT_BASE_LACUNARITY = 2.0;
-const DEFAULT_BASE_OCTAVE_COUNT = 1;
-const DEFAULT_BASE_PERSISTENCE = 0.25;
-const DEFAULT_BASE_SEGMENTS = 200;
-const DEFAULT_BASE_AMPLITUDE = 500;
-const DEFAULT_HIGH_THRESHOLD = 0;
-const DEFAULT_FALLOFF = 100; 
-//Display debug messages by default?
-const DEFAULT_DEBUG = true;
 
 var seedrandom = require('seedrandom');
 var Color = require('color-js');
 var Voronoi = require('./rhill-voronoi-core.js');
-var Perlin = require('./libnoise/module/generator/perlin.js');
-var Interpolation   = require('./libnoise/interpolation.js');
 var THREE = require('three');
 
 
@@ -41,9 +28,6 @@ Biome = function(name, canBorder, weight, clumpPenalty)
 	var volcanic = new Biome('volcanic',['forest','desert','volcanic','plains'],3,2.75);
 	var plains = new Biome('plains',['forest','ice','desert','plains','volcanic'],0.6,0.075);
 	var desert = new Biome('desert',['plains','volcanic','desert','forest'],0.5,0.1);
-
-	var highBiomes = [ice,volcanic,forest,plains];
-	var lowBiomes = [forest,plains,desert];
 	
 	var biomeList = [ice,forest,volcanic,plains,desert];
 
@@ -60,30 +44,6 @@ Biome.prototype.resetWeight = function()
 	this.weight = this.baseWeight;
 }
 
-//Polygon object for a simpler object to manipulate than a voronoi cell
-Polygon = function(edges)
-{
-	this.edges = edges || [];
-}
-//Converts voronoi cell to polygon object
-Polygon.prototype.cellToPolygon = function(cell)
-{
-	for(var j = 0; j < cell.halfedges.length; j++)
-	{
-		this.edges.push({a: cell.halfedges[j].getStartpoint() ,b: cell.halfedges[j].getEndpoint()});
-	}
-	this.site = cell.site;
-}
-//Distance between points
-function pointDistance(a,b)
-{
-	return Math.sqrt(Math.pow(a.y-b.y,2)+Math.pow(a.x-b.x,2));
-}
-
-function addPoints(a,b)
-{
-	return {x: a.x+b.x, y: a.y+b.y };
-}
 
 //this.baseMap is an array of points with corresponding height, biome weights, and color based on biome type
 TerrainGenerator = function(params)
@@ -94,289 +54,9 @@ TerrainGenerator = function(params)
 //Performs every step of terrain generation (not in constructor in case you want to render at different steps)
 TerrainGenerator.prototype.generateTerrain = function()
 {
-	//Yes, i know this system of debug messages is stupid. There should be some debug object that can debug.log(msg) and only prints to the console when enabled
-
-	if(this.debug)
-		console.log("Generating random sites");
-	//Generate random sites
-	this.randomSites();
-
-	if(this.debug)
-		console.log("Generating voronoi cells from random sites");
-	//Generate voronoi polygons and perform Lloyd relaxation
-	this.generateVoronoiPolygons();
-
-	if(this.debug)
-		console.log("Generating base grid");
-	//Generate base heightmap
-	this.generateBaseMap();
-
-	if(this.debug)
-		console.log("Assigning biome types to cells");
-	//Assign biomes to polygons
-	this.assignBiomes();
-
-	//Creates individual terrain generators for each biome type
-	if(this.debug)
-		console.log("Creating biome generators");
-
-	this.createBiomeGenerators();
-
-	if(this.debug)
-		console.log("Filling grid with biome types");
-	//Fills grid points with biome weights
-	this.fillBiomes();
-
-	if(this.debug)
-		console.log("Generating biome features");
-	//Generate biome terrain
-	this.generateBiomeTerrain();
-}
-
-//Recursive function for blending between biomes
-//Blend between color in same way for debug visuals (future use for terrain texture?)
-TerrainGenerator.prototype.getBlendedValue = function(point)
-{
-
-	if(point.biomeWeights.length > 1)
-	{
-		var alpha = point.biomeWeights[1].weight/(point.biomeWeights[0].weight+point.biomeWeights[1].weight);
-
-		//console.log(point.biomeWeights[0].combinedValue+"->"+point.biomeWeights[1].combinedValue + "| "+alpha);
-
-		point.biomeWeights[0].combinedValue = Interpolation.linear(
-			point.biomeWeights[0].combinedValue,
-			point.biomeWeights[1].combinedValue,
-			alpha
-			);
-		point.biomeWeights[0].weight += point.biomeWeights[1].weight;
-		point.biomeWeights.splice(1,1);
-	
-		//console.log(point.biomeWeights[0].combinedValue);
-
-		return this.getBlendedValue(point);
-
-	}else if(point.biomeWeights.length > 0){
-		point.color = point.biomeWeights[0].color;
-		return point.biomeWeights[0].combinedValue;
-	}else{
-		point.color = new Color('#FF0000');
-		if(this.debug)
-			console.log("Error: biome not assigned at point: "+JSON.stringify(point));
-		return 0;
-	}
-}
-
-
-TerrainGenerator.prototype.createBiomeGenerators = function()
-{
-	this.biomeGenerators = {};
-
-	//Plains
-	var plainsBase = new Perlin(this.baseMapParams.frequency, 2.25, 6, 0.35, this.seed, 1);
-	//Desert
-	var desertBase = new Perlin(this.baseMapParams.frequency, 2.1, 3, 0.3, this.seed, 1);
-	//Forest
-	var forestBase = new Perlin(this.baseMapParams.frequency, 2.0, 6, 0.5, this.seed, 1);
-
-	this.biomeGenerators.ice = this.baseMapGenerator;
-	this.biomeGenerators.volcanic = this.baseMapGenerator;
-	this.biomeGenerators.plains = plainsBase;
-	this.biomeGenerators.forest = forestBase;
-	this.biomeGenerators.desert = desertBase;
-}
-
-//point callbacks for scanline algorithm
-function biomeFill(polygon, xCoord, yCoord,params)
-{
-	if(params.terrainGen && params.biomeType)
-	{
-		var terrainGen = params.terrainGen;
-		if(xCoord >= 0 && yCoord >= 0 && xCoord < terrainGen.baseMapParams.segments && yCoord < terrainGen.baseMapParams.segments)
-		{
-			var foundWeight = false;
-			var index = terrainGen.coordToIndex(xCoord,yCoord);
-
-			for(var j = 0; j < terrainGen.baseMap[index].biomeWeights.length; j++)
-			{
-				if(terrainGen.baseMap[index].biomeWeights[j].name === params.biomeType.name)
-					foundWeight = true;
-			}
-
-			if(!foundWeight)
-			{
-				var weightInfo = {name: params.biomeType.name, weight: 1, combinedValue: terrainGen.biomeGenerators[params.biomeType.name].getValue(xCoord*terrainGen.scaleX,yCoord*terrainGen.scaleY,0), color: Color(colorTable[params.biomeType.name])};
-				terrainGen.baseMap[index].biomeWeights.push(weightInfo);
-			}
-		}
-	}else{
-		console.log("Incorrect parameters for point callback");
-	}
-}
-
-function gradientBiomeFill(polygon, xCoord, yCoord, params)
-{
-	if(params.terrainGen && params.biomeType)
-	{
-		var terrainGen = params.terrainGen;
-
-		var foundWeight = false;
-		var index = terrainGen.coordToIndex(xCoord,yCoord);
-
-		if(xCoord >= 0 && yCoord >= 0 && xCoord < terrainGen.baseMapParams.segments && yCoord < terrainGen.baseMapParams.segments)
-		{
-
-			for(var j = 0; j < terrainGen.baseMap[index].biomeWeights.length; j++)
-			{
-				if(terrainGen.baseMap[index].biomeWeights[j].name === params.biomeType.name)
-					foundWeight = true;
-			}
-
-			if(!foundWeight)
-			{
-				var biomeWeight = 0;
-				if(params.innerEdge)
-				{
-					var innerEdge = params.innerEdge;
-					var point = {x: xCoord*terrainGen.coordToWorldX, y: yCoord*terrainGen.coordToWorldY};
-					var distance = Math.abs((innerEdge.b.y-innerEdge.a.y)*point.x-(innerEdge.b.x-innerEdge.a.x)*point.y+innerEdge.b.x*innerEdge.a.y-innerEdge.b.y*innerEdge.a.x)/pointDistance(innerEdge.a,innerEdge.b);
-					biomeWeight = 1-distance/terrainGen.falloff;
-				}
-
-				var weightInfo = {name: params.biomeType.name, weight: biomeWeight, combinedValue: terrainGen.biomeGenerators[params.biomeType.name].getValue(xCoord*terrainGen.scaleX,yCoord*terrainGen.scaleY,0), color: Color(colorTable[params.biomeType.name])};
-				terrainGen.baseMap[index].biomeWeights.push(weightInfo);
-			}
-		}
-	}
-}
-
-//Calls pointCallback on every point within the polygon
-TerrainGenerator.prototype.scanLine = function(polygon, pointCallback, callbackParams)
-{
-	var yMin = this.sizeY;
-	var yMax = 0;
-
-	//Determine minimum and maximum y points
-	for(var j = 0; j < polygon.edges.length; j++)
-	{
-		//Go DEFAULT_FALLOFF out from each biome edge and add weight from this biome from 1 to 0
-		yMin = Math.min(polygon.edges[j].a.y,yMin);
-		yMax = Math.max(polygon.edges[j].a.y,yMax);
-	}
-
-	yMinCoord = Math.floor((yMin/this.sizeY)*this.baseMapParams.segments);
-	yMaxCoord = Math.floor((yMax/this.sizeY)*this.baseMapParams.segments);
-
-	for(var yCoord = yMinCoord; yCoord <= yMaxCoord; yCoord++)
-	{
-		var intersections = [];
-		//Get intersection points for the horizontal line at this y coordinate
-		for(var j = 0; j < polygon.edges.length; j++)
-		{
-			edgeMaxY = Math.max(polygon.edges[j].a.y,polygon.edges[j].b.y);
-			edgeMinY = Math.min(polygon.edges[j].a.y,polygon.edges[j].b.y);
-
-			if(yCoord*this.coordToWorldY >= edgeMinY && yCoord*this.coordToWorldY < edgeMaxY)
-			{
-				var slope,xCoord;
-				if(polygon.edges[j].a.x-polygon.edges[j].b.x != 0)
-				{
-				slope = (polygon.edges[j].a.y-polygon.edges[j].b.y)/(polygon.edges[j].a.x-polygon.edges[j].b.x);
-				var yintercept = polygon.edges[j].a.y - slope*polygon.edges[j].a.x;
-				xCoord = Math.floor(((yCoord*this.coordToWorldY-yintercept)/slope)/this.sizeX*this.baseMapParams.segments);
-				}else{
-					xCoord = polygon.edges[j].a.x/this.sizeX*this.baseMapParams.segments;
-				}
-
-				intersections.push(xCoord);
-			}
-		}
-
-		//Sort intersection points by x value
-		var sortedIntersections = intersections.sort(function(a,b){
-			return a-b;
-		});
-
-		//Callback on points in between
-		if(sortedIntersections.length > 1)
-		{
-			for(var j = 0; (j+1) < sortedIntersections.length; j+=2)
-			{
-				for(var xCoord = sortedIntersections[j]; xCoord < sortedIntersections[j+1]; xCoord++)
-				{
-					pointCallback(polygon,xCoord,yCoord, callbackParams);
-				}
-			}
-		}
-
-	}
 
 }
 
-
-TerrainGenerator.prototype.fillBiomes = function()
-{
-	for(var i = 0; i < this.diagram.cells.length; i++)
-	{
-		var cell = this.diagram.cells[i];
-		var polygon = new Polygon();
-		polygon.cellToPolygon(cell);
-
-		var callbackParams = {terrainGen: this, biomeType: cell.biomeType};
-
-		this.scanLine(polygon, biomeFill, callbackParams);
-	}
-
-	for(var i = 0; i < this.diagram.cells.length; i++)
-	{
-		var cell = this.diagram.cells[i];
-
-			//For each edge of the polygon
-		for(var j = 0; j < cell.halfedges.length; j++)
-		{
-
-			//Create a rectangle based on the cell edge and falloff distance
-			var cellEdge = {a:cell.halfedges[j].getStartpoint(),b:cell.halfedges[j].getEndpoint()};
-			callbackParams = {terrainGen: this, biomeType: cell.biomeType, innerEdge: cellEdge};
-
-			var rectangleEdges = [cellEdge];
-
-			var edgeNormal = new THREE.Vector2(cellEdge.a.y-cellEdge.b.y,cellEdge.b.x-cellEdge.a.x);
-			edgeNormal.normalize();
-
-			var pointA = {x: cellEdge.a.x, y: cellEdge.a.y};
-			var pointB = {x: cellEdge.b.x, y: cellEdge.b.y};
-
-			var testPoint = addPoints(pointA, edgeNormal);
-
-			var normalDirection = 1;
-			if(pointDistance(testPoint,cell.site) < pointDistance(pointA, cell.site))
-				normalDirection = -1;
-
-			edgeNormal.multiplyScalar(normalDirection*this.falloff);
-
-			var rectangle = new Polygon([
-				cellEdge, //inner edge
-				{a: cellEdge.a, b: addPoints(cellEdge.a,edgeNormal)},
-				{a: cellEdge.b, b: addPoints(cellEdge.b,edgeNormal)},
-				{a: addPoints(cellEdge.a,edgeNormal), b: addPoints(cellEdge.b,edgeNormal)}
-			]);
-			//Fill new polygon with weights based on distance from inner edge
-			this.scanLine(rectangle, gradientBiomeFill, callbackParams);
-		}
-	}
-}
-
-TerrainGenerator.prototype.generateBiomeTerrain = function()
-{
-	//Set the heightmap value to the blended value of all biomes at the point
-	for(var i = 0; i < this.baseMap.length; i++)
-	{
-		this.baseMap[i].height = this.getBlendedValue(this.baseMap[i]);
-		this.baseMap[i].height *= this.baseMapParams.amplitude*(-1); //Invert and multiply by amplitude
-		//!! Should each generator have it's own amplitude?
-	}
-}
 
 TerrainGenerator.prototype.assignBiomes = function()
 {
@@ -487,33 +167,6 @@ TerrainGenerator.prototype.assignBiomes = function()
     	console.log(JSON.stringify(biomeDistribution));
     }
 }
-TerrainGenerator.prototype.coordToIndex = function(x,y)
-{
-
-	return x+this.baseMapParams.segments*(this.baseMapParams.segments-1-y);
-}
-
-TerrainGenerator.prototype.generateBaseMap = function()
-{
-	this.baseMapGenerator = new Perlin(this.baseMapParams.frequency, this.baseMapParams.lacunarity, this.baseMapParams.octave_count, this.baseMapParams.persistence, this.seed, 1);
-	this.baseMap = [];
-
-	//The noise function needs to be polled from 0 to 1. 
-	//0 should be world coordinate (0,0) and 1 should be the dimension of the map.
-
-	for(var y = this.baseMapParams.segments-1; y >= 0 ; y--)
-	{
-		for(var x = 0; x < this.baseMapParams.segments; x++)
-		{
-			//Put height values in list row by row, top to bottom
-			var value = this.baseMapGenerator.getValue(x*this.scaleX,y*this.scaleY,0.0);
-			var point = {x: x*this.scaleX, y: y*this.scaleY, height: value, biomeWeights:[] };
-			this.baseMap.push(point);
-		}
-	}
-
-	//World coordinate of segment would be ssegmentCoord*(size/segments)
-}
 
 //Creates voronoi polygons from the terrain generator's sites
 TerrainGenerator.prototype.generateVoronoiPolygons = function()
@@ -580,87 +233,7 @@ TerrainGenerator.prototype.randomSites = function()
 
 TerrainGenerator.prototype.setDefaults = function(params)
 {
-	//Seed for random number generation
-	if(params.seed)
-		this.seed = params.seed;
-	else
-		this.seed = Math.floor((Math.random() * 1000000));
 
-	this.rng = new seedrandom(this.seed);
-
-	//Dimensions of the map
-	if(params.sizeX)
-		this.sizeX = params.sizeX;
-	else
-		this.sizeX = DEFAULT_MAP_SIZE;
-
-	if(params.sizeY)
-		this.sizeY = params.sizeY;
-	else
-		this.sizeY = DEFAULT_MAP_SIZE;
-
-	//Number of sites to use for polygon generation
-	if(params.siteNum)
-		this.siteNum = params.siteNum;
-	else
-		this.siteNum = DEFAULT_SITE_NUM;
-
-	//Number of times to perform Lloyd relaxation
-	if(params.relaxIterations)
-		this.relaxIterations = params.relaxIterations;
-	else
-		this.relaxIterations = DEFAULT_RELAX_ITERATIONS;
-
-	//Threshold of what is considered high
-	if(params.highThreshold)
-		this.highThreshold = params.highThreshold;
-	else
-		this.highThreshold = DEFAULT_HIGH_THRESHOLD;
-
-	if(params.debug)
-		this.debug = params.debug;
-	else
-		this.debug = DEFAULT_DEBUG;
-
-	if(params.falloff)
-		this.falloff = params.falloff;
-	else
-		this.falloff = DEFAULT_FALLOFF;
-
-	//Generation parameters for the base map
-	if(params.baseMapParams)
-	{
-		this.baseMapParams = params.baseMapParams;
-	}else{
-		this.baseMapParams = {};
-	}
-
-	if(!this.baseMapParams.frequency)
-		this.baseMapParams.frequency = DEFAULT_BASE_FREQUENCY;
-
-	if(!this.baseMapParams.lacunarity)
-		this.baseMapParams.lacunarity = DEFAULT_BASE_LACUNARITY;
-
-	if(!this.baseMapParams.octave_count)
-		this.baseMapParams.octave_count = DEFAULT_BASE_OCTAVE_COUNT;
-	
-	if(!this.baseMapParams.persistence)
-		this.baseMapParams.persistence = DEFAULT_BASE_PERSISTENCE;
-
-	if(!this.baseMapParams.segments)
-		this.baseMapParams.segments = DEFAULT_BASE_SEGMENTS;
-
-	if(!this.baseMapParams.amplitude)
-		this.baseMapParams.amplitude = DEFAULT_BASE_AMPLITUDE;
-
-	//Multiply by scale to go from local coordinates to world %
-	//i.e. with a 200 segment world, coordinate 100 is .5 (50%)
-	this.scaleX = 1/this.baseMapParams.segments;
-	this.scaleY = 1/this.baseMapParams.segments;
-
-	//Multiply this to go from local coordinates to world coordinates
-	this.coordToWorldY = this.sizeY*this.scaleY;
-	this.coordToWorldX = this.sizeX*this.scaleX;
 }
 
 module.exports = TerrainGenerator;
